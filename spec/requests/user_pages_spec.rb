@@ -48,7 +48,9 @@ describe "UserPages" do
     end
   end
 
-
+  describe "after saving the user" do    
+    it { should have_link('Sign out') }
+  end
 
   describe "profile page" do
     let(:user) { FactoryGirl.create(:user) }
@@ -57,5 +59,7 @@ describe "UserPages" do
     it { should have_selector('h1',    text: user.name) }
     it { should have_selector('title', text: user.name) }
   end
+
+
 
 end
