@@ -110,6 +110,19 @@ describe "UserPages" do
           it "should render the desired protected page" do
             page.should have_selector('title', text: 'Edit user')
           end
+
+          describe "when signing in again" do
+            before do
+              visit signin_path
+              fill_in "Email",    with: user.email
+              fill_in "Password", with: user.password
+              click_button "Sign in"
+            end
+
+            it "should render the default (profile) page" do
+              page.should have_selector('title', text: user.name) 
+            end
+          end
         end
       end
 
@@ -193,6 +206,14 @@ describe "UserPages" do
           expect { click_link('delete') }.to change(User, :count).by(-1)
         end
         it { should_not have_link('delete', href: user_path(admin)) }
+
+        describe "should not be able to delete himself" do
+          usersbef = User.count
+          before { delete user_path(admin) }
+          specify { response.should redirect_to(users_path) } 
+          usersaft = User.count
+          usersbef.should == usersaft
+        end
       end
     end
 

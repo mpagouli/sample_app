@@ -1,8 +1,10 @@
 <%= provide(:title, 'Sign up') %>
-<% @submit_text = "Create my account" %>
 <h1>Sign up</h1>
 <div class="row">
   <div class="span6 offset3">
-    <%= render 'userform' %>
+    <%= form_for(@user) do |f| %>
+      <%= render 'userform', f: f %>
+      <%= f.submit "Create my account", class: "btn btn-large btn-primary" %>
+    <% end %>
   </div>
 </div>
