@@ -1,8 +1,6 @@
 @import "bootstrap";
 
 
-
-
 /* mixins, variables, etc. */
 
 $grayMediumLight: #eaeaea;
@@ -236,5 +234,18 @@ aside {
   textarea {
     height: 100px;
     margin-bottom: 5px;
+  }
+}
+
+/* microposts quota */
+.quota {
+  margin-bottom:20px; 
+  label{ 
+    height:10px;
+    float:right; 
+    padding-right:4px; 
+    font-size:12px; 
+    //font-weight:bold;
+    color:#0080FF;
   }
 }
