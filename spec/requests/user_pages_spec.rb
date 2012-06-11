@@ -46,14 +46,65 @@ describe "UserPages" do
     end
   end
 
+  describe "follow/unfollow buttons" do
+      let(:user) { FactoryGirl.create(:user) }
+      let(:other_user) { FactoryGirl.create(:user) }
+      before { visit signin_path
+               sign_in user }
+
+      describe "following a user" do
+        before { visit user_path(other_user) }
+
+        it "should increment the followed user count" do
+          expect do
+            click_button "Follow"
+          end.to change(user.followed_users, :count).by(1)
+        end
+
+        it "should increment the other user's followers count" do
+          expect do
+            click_button "Follow"
+          end.to change(other_user.followers, :count).by(1)
+        end
+
+        describe "toggling the button" do
+          before { click_button "Follow" }
+          it { should have_selector('input', value: 'Unfollow') }
+        end
+      end
+
+      describe "unfollowing a user" do
+        before do
+          user.follow!(other_user)
+          visit user_path(other_user)
+        end
+
+        it "should decrement the followed user count" do
+          expect do
+            click_button "Unfollow"
+          end.to change(user.followed_users, :count).by(-1)
+        end
+
+        it "should decrement the other user's followers count" do
+          expect do
+            click_button "Unfollow"
+          end.to change(other_user.followers, :count).by(-1)
+        end
+
+        describe "toggling the button" do
+          before { click_button "Unfollow" }
+          it { should have_selector('input', value: 'Follow') }
+        end
+      end
+  end
+
   describe "profile page" do
     let(:user) { FactoryGirl.create(:user) }
     #let!(:m1) { FactoryGirl.create(:micropost, user: user, content: "Foo") }
     #let!(:m2) { FactoryGirl.create(:micropost, user: user, content: "Bar") }
-
     before(:all) { 50.times { |n| FactoryGirl.create(:micropost, user: user, content: "Foo#{n}") } }
-    after(:all)  { User.microposts.delete_all }
-
+    after(:all)  { user.microposts.delete_all }
+    
     before { visit user_path(user) }
 
     it { should have_selector('h1',    text: user.name) }
@@ -74,7 +125,7 @@ describe "UserPages" do
 
       it { should have_selector('div.pagination') }
 
-      it "should list each user" do
+      it "should list each micropost" do
         user.microposts.paginate(page: 1).each do |micropost|
           page.should have_content(micropost.content)
         end
@@ -94,6 +145,7 @@ describe "UserPages" do
       it { should_not have_link('delete', title:m2.content) }
       
     end
+
   end
 
 
@@ -132,90 +184,6 @@ describe "UserPages" do
       specify { user.reload.email.should == new_email }
     end
 
-  end
-
-  describe "authorization" do
-
-    describe "for non-signed-in users" do
-      let(:user) { FactoryGirl.create(:user) }
-      
-      describe "when attempting to visit a protected page" do
-        before do
-          visit edit_user_path(user)
-          fill_in "Email",    with: user.email
-          fill_in "Password", with: user.password
-          click_button "Sign in"
-        end
-        
-        describe "in the Microposts controller" do
-
-          describe "submitting to the create action" do
-            before { post microposts_path }
-            specify { response.should redirect_to(signin_path) }
-          end
-
-          describe "submitting to the destroy action" do
-            before { delete micropost_path(FactoryGirl.create(:micropost)) }
-            specify { response.should redirect_to(signin_path) }
-          end
-        end
-
-        describe "after signing in" do
-
-          it "should render the desired protected page" do
-            page.should have_selector('title', text: 'Edit user')
-          end
-
-          describe "when signing in again" do
-            before do
-              visit signin_path
-              fill_in "Email",    with: user.email
-              fill_in "Password", with: user.password
-              click_button "Sign in"
-            end
-
-            it "should render the default (profile) page" do
-              page.should have_selector('title', text: user.name) 
-            end
-          end
-        end
-      end
-
-      describe "in the Users controller" do
-
-        describe "visiting the edit page" do
-          before { visit edit_user_path(user) }
-          it { should have_selector('title', text: 'Sign in') }
-        end
-
-        describe "submitting to the update action" do
-          before { put user_path(user) }
-          specify { response.should redirect_to(signin_path) }
-        end
-
-        describe "visiting the user index" do
-          before { visit users_path }
-          it { should have_selector('title', text: 'Sign in') }
-        end
-      end
-    end
-
-    describe "as wrong user" do
-      let(:user) { FactoryGirl.create(:user) }
-      let(:wrong_user) { FactoryGirl.create(:user, email: "wrong@example.com") }
-      before { visit signin_path
-               sign_in user }
-
-      describe "visiting Users#edit page" do
-        before { visit edit_user_path(wrong_user) }
-        it { should_not have_selector('title', text: full_title('Edit user')) }
-      end
-
-      describe "submitting a PUT request to the Users#update action" do
-        before { put user_path(wrong_user) }
-        specify { response.should redirect_to(root_path) }
-      end
-    end
   end
 
   describe "index" do
@@ -286,5 +254,37 @@ describe "UserPages" do
     end
 
   end
+
+
+  describe "following/followers" do
+    let(:user) { FactoryGirl.create(:user) }
+    let(:other_user) { FactoryGirl.create(:user) }
+    before { user.follow!(other_user) }
+
+    describe "followed users" do
+      before do
+        visit signin_path
+        sign_in user
+        visit following_user_path(user)
+      end
+
+      it { should have_selector('title', text: full_title('Following')) }
+      it { should have_selector('h3', text: 'Following') }
+      it { should have_link(other_user.name, href: user_path(other_user)) }
+    end
+
+    describe "followers" do
+      before do
+        visit signin_path
+        sign_in other_user
+        visit followers_user_path(other_user)
+      end
+
+      it { should have_selector('title', text: full_title('Followers')) }
+      it { should have_selector('h3', text: 'Followers') }
+      it { should have_link(user.name, href: user_path(user)) }
+    end
+  end
+
 
 end

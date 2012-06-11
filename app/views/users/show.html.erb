@@ -7,10 +7,14 @@
   			<%= @user.name %>
 			</h1>
 		</section>
+    <section>
+      <%= render 'shared/stats' %>
+    </section>
 	</aside>
 	<div class="span8">
+    <%= render 'follow_form' if signed_in? %>
     <% if @user.microposts.any? %>
-      <h3><%= @user.microposts.count %> <%= pluralize(@user.microposts.count,'Micropost') %> </h3>
+      <h3><%= pluralize(@user.microposts.count,'Micropost') %> </h3>
       <ol class="microposts">
         <%= render @microposts %>
       </ol>
